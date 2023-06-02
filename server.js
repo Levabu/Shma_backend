@@ -23,7 +23,7 @@ app.use((req, res, next) => {
   next();
 })
 
-app.use('/users', require('./routes/users-route'));
+app.use('/api/v1', require('./routes/api-router.js'));
 
 io.on('connection', (socket) => {
   console.log('a user connected');
