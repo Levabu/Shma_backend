@@ -19,11 +19,10 @@ class UsersController {
     }
 
     // for debug, until login/signup is implemented
-    static async getUserByUsername(req, res) {
+    static async getUserById(req, res) {
         try {
-            const { userName } = req.params;
-            console.log(UsersDAO);
-            const user = await UsersDAO.getUserByUsername(userName);
+            const { id } = req.params;
+            const user = await UsersDAO.getUserById(id);
             delete user.password;
             res.ok(user);
         } catch (error) {
