@@ -10,7 +10,11 @@ dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
 const app = express();
 const server = http.createServer(app);
 const { Server } = require('socket.io');
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: "*"
+  }
+});
 
 app.use(cors());
 app.use(express.json());
@@ -27,6 +31,10 @@ app.use('/api/v1', require('./routes/api-router.js'));
 
 io.on('connection', (socket) => {
   console.log('a user connected');
+
+  socket.on('disconnect', function () {
+    console.log('a user disconnected');
+ });
 });
 
 server.listen(process.env.PORT, () => {
