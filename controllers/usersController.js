@@ -1,6 +1,7 @@
 const UsersDAO = require("../lib/db/dao/usersDAO");
 const bcrypt = require("bcrypt");
 const { noMatch, userConflictErr } = require("../lib/responseHandlers");
+const jwt = require("../lib/jwt");
 
 UsersDAO;
 class UsersController {
@@ -19,6 +20,10 @@ class UsersController {
       await UsersDAO.addUser(userName, firstName, lastName, hashedPassword);
       const user = await UsersDAO.getUserByUsername(userName);
       delete user.password;
+
+      const token = jwt.sign({ id: user.id });
+      user.token = token;
+
       res.create(user);
     } catch (error) {
       res.serverErr(error);
@@ -34,6 +39,10 @@ class UsersController {
           const isPasswordValid = bcrypt.compareSync(password, user.password);
           if (isPasswordValid) {
             delete user.password;
+
+            const token = jwt.sign({ id: user.id });
+            user.token = token;
+            
             return res.ok(user);
           }
         }
