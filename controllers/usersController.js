@@ -1,6 +1,6 @@
 const UsersDAO = require("../lib/db/dao/usersDAO");
 const bcrypt = require("bcrypt");
-const { noMatch } = require("../lib/responseHandlers");
+const { noMatch, userConflictErr } = require("../lib/responseHandlers");
 
 UsersDAO;
 class UsersController {
@@ -10,17 +10,16 @@ class UsersController {
         req.body;
       const isUserNameExists = await UsersDAO.checkForUserName(userName);
       if (isUserNameExists) {
-        return res.ok(
-          "User name already exists. Please choose a different user name"
-        );
+        return res.customSend(userConflictErr());
       }
       if (password !== confirmPassword) {
-        return res.ok("Passwords don't match. Please re-enter both passwords");
+        return res.customSend(noMatch("Passwords don't match."));
       }
-      const id = await UsersDAO.getNextID();
       const hashedPassword = bcrypt.hashSync(password, 7);
       await UsersDAO.addUser(userName, firstName, lastName, hashedPassword);
-      res.create({ userName, firstName, lastName, id });
+      const user = await UsersDAO.getUserByUsername(userName);
+      delete user.password;
+      res.create(user);
     } catch (error) {
       res.serverErr(error);
     }
@@ -32,9 +31,11 @@ class UsersController {
       try {
         const user = await UsersDAO.getUserByUsername(userName);
         if (user) {
-          console.log(user);
           const isPasswordValid = bcrypt.compareSync(password, user.password);
-          if (isPasswordValid) return res.ok(user);
+          if (isPasswordValid) {
+            delete user.password;
+            return res.ok(user);
+          }
         }
         return res.customSend(noMatch("User Name or Password Incorrect"));
       } catch {
