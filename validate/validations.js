@@ -20,7 +20,7 @@ const signUpSchema = object({
 });
 
 const loginSchema = object({
-    email: string().required(),
+    userName: string().required(),
     password: string().required()
 });
 
