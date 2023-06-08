@@ -29,7 +29,7 @@ class UsersController {
       await UsersDAO.addUser(userName, firstName, lastName, hashedPassword);
       const user = await UsersDAO.getUserByUsername(userName);
       delete user.password;
-
+    
       const token = jwt.sign({ id: user.id });
       user.token = token;
 
@@ -46,6 +46,7 @@ class UsersController {
         const user = await UsersDAO.getUserByUsername(userName);
         if (user) {
           const isPasswordValid = bcrypt.compareSync(password, user.password);
+
           if (isPasswordValid) {
             delete user.password;
 
@@ -56,7 +57,8 @@ class UsersController {
           }
         }
         return res.customSend(noMatch("User Name or Password Incorrect"));
-      } catch {
+      } catch (error) {
+        console.log(error);
         return res.customSend(noMatch("User Name or Password Incorrect"));
       }
     } catch (error) {
@@ -68,8 +70,8 @@ class UsersController {
     try {
       const { userName } = req.query;
       const user = await UsersDAO.getUserByUsername(userName);
-      if (user && user.length) {
-        delete user[0].password;
+      if (user) {
+        delete user.password;
         return res.ok(user);
       } else {
         return res.customSend(noMatch("This user name does not exist."));
