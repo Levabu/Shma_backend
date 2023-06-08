@@ -84,6 +84,24 @@ class UsersController {
       res.serverErr(error);
     }
   }
+
+  static async getUsersByIds(req, res) {
+    try {
+        const { ids } = req.body;
+        if (!ids) return res.customSend(noMatch("No array of ids were submitted."));
+        const arrOfUsers = await UsersDAO.getUsersByIds(ids);
+        if (arrOfUsers && arrOfUsers.length) {
+            arrOfUsers.forEach(user => {
+                delete user.password
+            })
+            return res.ok(arrOfUsers);
+        } else {
+            return res.customSend(noMatch("There are no users with these ids."))
+        }
+    } catch (error) {
+        res.serverErr(error)
+    }
+  }
 }
 
 module.exports = UsersController;
