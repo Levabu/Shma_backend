@@ -5,8 +5,7 @@ const router = express.Router();
 
 router.post('/signup', validateDto(signUpSchema), UsersController.signup);
 router.post('/login', validateDto(loginSchema), UsersController.login);
-
-// for debug, until login/signup is implemented
-router.get('/:id', UsersController.getUserById);
+router.get('/user-details', UsersController.userDetails);router.get('/user-by-id', UsersController.getUserById);
+router.post('/users-by-ids',UsersController.getUsersByIds);
 
 module.exports = router;
