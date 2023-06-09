@@ -2,14 +2,14 @@ const http = require('http');
 
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const { validResponse, createdResponse, serverError } = require('./lib/responseHandlers.js');
-
-dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
+const httpAuth = require('./lib/middlewares/http/auth.js');
+const socketsAuth = require('./lib/middlewares/sockets/auth.js');
 
 const app = express();
 const server = http.createServer(app);
 const { Server } = require('socket.io');
+const { PORT } = require('./lib/settings.js');
 const io = new Server(server, {
   cors: {
     origin: "*"
@@ -27,16 +27,26 @@ app.use((req, res, next) => {
   next();
 })
 
+app.use(httpAuth);
+
 app.use('/api/v1', require('./routes/api-router.js'));
+
+io.use(socketsAuth);
 
 io.on('connection', (socket) => {
   console.log('a user connected');
+  // console.log(socket.handshake.auth); 
+
+  socket.on('chat_message', (message) => {
+    console.log(message);
+    io.emit('chat_message', message);
+  });
 
   socket.on('disconnect', function () {
     console.log('a user disconnected');
  });
 });
 
-server.listen(process.env.PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${process.env.PORT}`);
 });

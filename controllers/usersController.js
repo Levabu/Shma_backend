@@ -1,7 +1,7 @@
 const UsersDAO = require("../lib/db/dao/usersDAO");
 const bcrypt = require("bcrypt");
 const { noMatch, invalidUserName } = require("../lib/responseHandlers");
-const jwt = require("../lib/jwt");
+const { jwt } = require("../lib/jwt");
 
 UsersDAO;
 class UsersController {
@@ -52,7 +52,7 @@ class UsersController {
 
             const token = jwt.sign({ id: user.id });
             user.token = token;
-            
+
             return res.ok(user);
           }
         }
