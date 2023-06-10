@@ -10,6 +10,8 @@ const app = express();
 const server = http.createServer(app);
 const { Server } = require('socket.io');
 const { PORT } = require('./lib/settings.js');
+const { handleChatMessage } = require('./sockets/events.js');
+const { addConnection, removeConnection } = require('./sockets/connections.js');
 const io = new Server(server, {
   cors: {
     origin: "*"
@@ -33,18 +35,18 @@ app.use('/api/v1', require('./routes/api-router.js'));
 
 io.use(socketsAuth);
 
-io.on('connection', (socket) => {
-  console.log('a user connected');
-  // console.log(socket.handshake.auth); 
+io.on('connection', (socket, next) => {
+  const { userId, connectionId } = socket;
+  console.log(`connected user ${userId}`);
+  addConnection(userId, connectionId);
+  socket.join(userId);
+  
+  handleChatMessage(socket);
 
-  socket.on('chat_message', (message) => {
-    console.log(message);
-    io.emit('chat_message', message);
+  socket.on('disconnect', () => {
+    console.log(`disconnected user ${userId}`);
+    removeConnection(userId, connectionId);
   });
-
-  socket.on('disconnect', function () {
-    console.log('a user disconnected');
- });
 });
 
 server.listen(PORT, () => {
