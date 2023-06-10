@@ -12,6 +12,7 @@ const { Server } = require('socket.io');
 const { PORT } = require('./lib/settings.js');
 const { handleChatMessage } = require('./sockets/events.js');
 const { addConnection, removeConnection } = require('./sockets/connections.js');
+const {db} = require('./lib/db/db.js');
 const io = new Server(server, {
   cors: {
     origin: "*"
