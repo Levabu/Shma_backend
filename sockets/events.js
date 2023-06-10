@@ -1,4 +1,5 @@
 
+const FriendshipsDAO = require("../lib/db/dao/FriendshipsDAO");
 const { PrivateMessagesDAO } = require("../lib/db/dao/MessagesDAO");
 const PrivateMessage = require("../lib/db/models/PrivateMessage");
 const { aggregatePrivateMessages } = require("../lib/db/utils");
@@ -8,8 +9,6 @@ const handleChatMessage = (socket) => {
     console.log(message);
     const { userId } = socket;
     try {
-      // todo: validate friendship
-
       let to;
       let db_message;
       let messageDao;
@@ -18,6 +17,12 @@ const handleChatMessage = (socket) => {
         to = `group_${message.to}`
       } else {
         to = message.to;
+
+        const friendship = await FriendshipsDAO.getFriendship(userId, to);
+        if (!friendship || friendship.status !== 'accepted') {
+          throw new Error('You are not friends with this user');
+        }
+
         db_message = new PrivateMessage({
           senderId: userId,
           recipientId: to,
