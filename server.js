@@ -10,9 +10,10 @@ const app = express();
 const server = http.createServer(app);
 const { Server } = require('socket.io');
 const { PORT } = require('./lib/settings.js');
-const { handleChatMessage } = require('./sockets/events.js');
+const { handleChatMessage, handleLoadChatHistory } = require('./sockets/events.js');
 const { addConnection, removeConnection } = require('./sockets/connections.js');
 const {db} = require('./lib/db/db.js');
+const { PrivateMessagesDAO } = require('./lib/db/dao/MessagesDAO.js');
 const io = new Server(server, {
   cors: {
     origin: "*"
@@ -36,16 +37,16 @@ app.use('/api/v1', require('./routes/api-router.js'));
 
 io.use(socketsAuth);
 
-io.on('connection', (socket, next) => {
+io.on('connection', async (socket, next) => {
   const { userId, connectionId } = socket;
-  console.log(`connected user ${userId}`);
   addConnection(userId, connectionId);
   socket.join(userId);
-  
+
+  handleLoadChatHistory(socket);
+
   handleChatMessage(socket);
 
   socket.on('disconnect', () => {
-    console.log(`disconnected user ${userId}`);
     removeConnection(userId, connectionId);
   });
 });

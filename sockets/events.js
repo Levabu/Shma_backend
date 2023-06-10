@@ -1,5 +1,7 @@
-const { privateMessagesDAO } = require("../lib/db/dao/MessagesDAO");
+
+const { PrivateMessagesDAO } = require("../lib/db/dao/MessagesDAO");
 const PrivateMessage = require("../lib/db/models/PrivateMessage");
+const { aggregatePrivateMessages } = require("../lib/db/utils");
 
 const handleChatMessage = (socket) => {
   socket.on('chat_message', async (message) => {
@@ -21,7 +23,7 @@ const handleChatMessage = (socket) => {
           recipientId: to,
           text: message.message
         })
-        messageDao = privateMessagesDAO;
+        messageDao = PrivateMessagesDAO;
       }
       
       const messageId = await messageDao.createMessage
@@ -32,12 +34,27 @@ const handleChatMessage = (socket) => {
         from: userId
       });
     } catch (error) {
-      socket.emit('connect_error', error.message);
+      socket.emit('error', error.message);
     }
-    
+  });
+}
+
+const handleLoadChatHistory = (socket) => {
+  socket.once('load_chat_history', async () => {
+    try {
+      const { userId } = socket;
+      history = {};
+      const privateMessages = await PrivateMessagesDAO.getUserPrivateMessages(userId);
+      history.private = aggregatePrivateMessages(privateMessages, userId);
+      history.group = {}; // todo: get group messages
+      socket.emit('load_chat_history', history);
+    } catch (error) {
+      socket.emit('error', error.message);
+    }
   });
 }
 
 module.exports = {
-  handleChatMessage
+  handleChatMessage,
+  handleLoadChatHistory
 }
