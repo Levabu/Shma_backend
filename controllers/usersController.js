@@ -2,6 +2,8 @@ const UsersDAO = require("../lib/db/dao/usersDAO");
 const bcrypt = require("bcrypt");
 const { noMatch, invalidUserName } = require("../lib/responseHandlers");
 const { jwt } = require("../lib/jwt");
+const { PrivateMessagesDAO, GroupMessagesDAO } = require("../lib/db/dao/MessagesDAO");
+const { aggregatePrivateMessages, aggregateGroupMessages } = require("../lib/db/utils");
 
 UsersDAO;
 class UsersController {
@@ -113,6 +115,25 @@ class UsersController {
         res.serverErr(error)
     }
   }
+
+  static async getUserChatHistory(req, res) {
+    try {
+        const history = {};
+        const userId = req.user.id;
+        const privateMessages = await PrivateMessagesDAO.getUserPrivateMessages(userId);
+        history.private = aggregatePrivateMessages(privateMessages, userId);
+        
+        const groupMessages = await GroupMessagesDAO.getUserGroupsMessages(userId);
+        history.group = aggregateGroupMessages(groupMessages, userId);
+  
+        res.ok(history);
+      } catch (error) {
+        console.log(error);
+        res.serverErr(error)
+      }
+  }
 }
+
+
 
 module.exports = UsersController;

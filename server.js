@@ -10,7 +10,7 @@ const app = express();
 const server = http.createServer(app);
 const { Server } = require('socket.io');
 const { PORT } = require('./lib/settings.js');
-const { handleChatMessage, handleLoadChatHistory } = require('./sockets/events.js');
+const { handleChatMessage } = require('./sockets/events.js');
 const { addConnection, removeConnection } = require('./sockets/connections.js');
 const {db} = require('./lib/db/db.js');
 const { PrivateMessagesDAO } = require('./lib/db/dao/MessagesDAO.js');
@@ -46,8 +46,6 @@ io.on('connection', async (socket) => {
   const userGroups = await GroupsDAO.getUserGroups(userId);
   const groupRooms = userGroups.map(group => `group_${group.id}`);
   if (groupRooms.length) socket.join(groupRooms);
-
-  handleLoadChatHistory(socket);
 
   handleChatMessage(socket);
 

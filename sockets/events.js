@@ -54,26 +54,6 @@ const handleChatMessage = (socket) => {
   });
 }
 
-const handleLoadChatHistory = (socket) => {
-  socket.on('load_chat_history', async () => {
-    try {
-      const { userId } = socket;
-      history = {};
-
-      const privateMessages = await PrivateMessagesDAO.getUserPrivateMessages(userId);
-      history.private = aggregatePrivateMessages(privateMessages, userId);
-      
-      const groupMessages = await GroupMessagesDAO.getUserGroupsMessages(userId);
-      history.group = aggregateGroupMessages(groupMessages, userId);
-
-      socket.emit('load_chat_history', history);
-    } catch (error) {
-      socket.emit('error', error.message);
-    }
-  });
-}
-
 module.exports = {
-  handleChatMessage,
-  handleLoadChatHistory
+  handleChatMessage
 }
