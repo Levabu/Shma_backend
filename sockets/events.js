@@ -3,7 +3,6 @@ const FriendshipsDAO = require("../lib/db/dao/FriendshipsDAO");
 const { PrivateMessagesDAO, GroupMessagesDAO } = require("../lib/db/dao/MessagesDAO");
 const GroupMessage = require("../lib/db/models/GroupMessage");
 const PrivateMessage = require("../lib/db/models/PrivateMessage");
-const { aggregatePrivateMessages, aggregateGroupMessages } = require("../lib/db/utils");
 
 const handleChatMessage = (socket) => {
   socket.on('chat_message', async (message) => {
@@ -46,7 +45,8 @@ const handleChatMessage = (socket) => {
       socket.to(to).to(userId).emit('chat_message', {
         message: message.message,
         from: userId,
-        type: message.type
+        to: message.to,
+        type: message.type,
       });
     } catch (error) {
       socket.emit('error', error.message);
