@@ -1,20 +1,29 @@
 
 const FriendshipsDAO = require("../lib/db/dao/FriendshipsDAO");
-const { PrivateMessagesDAO } = require("../lib/db/dao/MessagesDAO");
+const { PrivateMessagesDAO, GroupMessagesDAO } = require("../lib/db/dao/MessagesDAO");
+const GroupMessage = require("../lib/db/models/GroupMessage");
 const PrivateMessage = require("../lib/db/models/PrivateMessage");
-const { aggregatePrivateMessages } = require("../lib/db/utils");
+const { aggregatePrivateMessages, aggregateGroupMessages } = require("../lib/db/utils");
 
 const handleChatMessage = (socket) => {
   socket.on('chat_message', async (message) => {
-    console.log(message);
     const { userId } = socket;
     try {
       let to;
       let db_message;
       let messageDao;
       if (message.type === 'group') {
-        // todo: process group message, save to db
         to = `group_${message.to}`
+        if (!socket.rooms.has(to)) {
+          throw new Error('You are not a member of this group');
+        }
+
+        db_message = new GroupMessage ({
+          senderId: userId,
+          groupId: message.to,
+          text: message.message
+        })
+        messageDao = GroupMessagesDAO;
       } else {
         to = message.to;
 
@@ -36,7 +45,8 @@ const handleChatMessage = (socket) => {
 
       socket.to(to).to(userId).emit('chat_message', {
         message: message.message,
-        from: userId
+        from: userId,
+        type: message.type
       });
     } catch (error) {
       socket.emit('error', error.message);
@@ -45,13 +55,17 @@ const handleChatMessage = (socket) => {
 }
 
 const handleLoadChatHistory = (socket) => {
-  socket.once('load_chat_history', async () => {
+  socket.on('load_chat_history', async () => {
     try {
       const { userId } = socket;
       history = {};
+
       const privateMessages = await PrivateMessagesDAO.getUserPrivateMessages(userId);
       history.private = aggregatePrivateMessages(privateMessages, userId);
-      history.group = {}; // todo: get group messages
+      
+      const groupMessages = await GroupMessagesDAO.getUserGroupsMessages(userId);
+      history.group = aggregateGroupMessages(groupMessages, userId);
+
       socket.emit('load_chat_history', history);
     } catch (error) {
       socket.emit('error', error.message);

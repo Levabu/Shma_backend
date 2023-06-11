@@ -14,6 +14,7 @@ const { handleChatMessage, handleLoadChatHistory } = require('./sockets/events.j
 const { addConnection, removeConnection } = require('./sockets/connections.js');
 const {db} = require('./lib/db/db.js');
 const { PrivateMessagesDAO } = require('./lib/db/dao/MessagesDAO.js');
+const GroupsDAO = require('./lib/db/dao/GroupsDAO.js');
 const io = new Server(server, {
   cors: {
     origin: "*"
@@ -37,10 +38,14 @@ app.use('/api/v1', require('./routes/api-router.js'));
 
 io.use(socketsAuth);
 
-io.on('connection', async (socket, next) => {
+io.on('connection', async (socket) => {
   const { userId, connectionId } = socket;
   addConnection(userId, connectionId);
   socket.join(userId);
+
+  const userGroups = await GroupsDAO.getUserGroups(userId);
+  const groupRooms = userGroups.map(group => `group_${group.id}`);
+  if (groupRooms.length) socket.join(groupRooms);
 
   handleLoadChatHistory(socket);
 
