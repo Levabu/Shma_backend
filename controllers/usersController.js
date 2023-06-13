@@ -4,6 +4,8 @@ const { noMatch, invalidUserName } = require("../lib/responseHandlers");
 const { jwt } = require("../lib/jwt");
 const { PrivateMessagesDAO, GroupMessagesDAO } = require("../lib/db/dao/MessagesDAO");
 const { aggregatePrivateMessages, aggregateGroupMessages } = require("../lib/db/utils");
+const GroupsDAO = require("../lib/db/dao/GroupsDAO");
+const FriendshipsDAO = require("../lib/db/dao/FriendshipsDAO");
 
 UsersDAO;
 class UsersController {
@@ -125,7 +127,8 @@ class UsersController {
         
         const groupMessages = await GroupMessagesDAO.getUserGroupsMessages(userId);
         history.group = aggregateGroupMessages(groupMessages, userId);
-  
+        history.userGroups = await GroupsDAO.getUserGroups(userId);
+        history.friends = await FriendshipsDAO.getFriendsNames(userId);// .getUserFriends(userId);
         res.ok(history);
       } catch (error) {
         console.log(error);
