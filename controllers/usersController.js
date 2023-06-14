@@ -2,8 +2,14 @@ const UsersDAO = require("../lib/db/dao/usersDAO");
 const bcrypt = require("bcrypt");
 const { noMatch, invalidUserName } = require("../lib/responseHandlers");
 const { jwt } = require("../lib/jwt");
-const { PrivateMessagesDAO, GroupMessagesDAO } = require("../lib/db/dao/MessagesDAO");
-const { aggregatePrivateMessages, aggregateGroupMessages } = require("../lib/db/utils");
+const {
+  PrivateMessagesDAO,
+  GroupMessagesDAO,
+} = require("../lib/db/dao/MessagesDAO");
+const {
+  aggregatePrivateMessages,
+  aggregateGroupMessages,
+} = require("../lib/db/utils");
 const GroupsDAO = require("../lib/db/dao/GroupsDAO");
 const FriendshipsDAO = require("../lib/db/dao/FriendshipsDAO");
 
@@ -33,7 +39,8 @@ class UsersController {
       await UsersDAO.addUser(userName, firstName, lastName, hashedPassword);
       const user = await UsersDAO.getUserByUsername(userName);
       delete user.password;
-    
+
+      // bug with line below - throws error (which in turn throws server error)
       const token = jwt.sign({ id: user.id });
       user.token = token;
 
@@ -54,6 +61,7 @@ class UsersController {
           if (isPasswordValid) {
             delete user.password;
 
+            // bug with line below - throws error (which in turn throws server error)
             const token = jwt.sign({ id: user.id });
             user.token = token;
 
@@ -102,41 +110,44 @@ class UsersController {
 
   static async getUsersByIds(req, res) {
     try {
-        const { ids } = req.body;
-        if (!ids) return res.customSend(noMatch("No array of ids were submitted."));
-        const arrOfUsers = await UsersDAO.getUsersByIds(ids);
-        if (arrOfUsers && arrOfUsers.length) {
-            arrOfUsers.forEach(user => {
-                delete user.password
-            })
-            return res.ok(arrOfUsers);
-        } else {
-            return res.customSend(noMatch("There are no users with these ids."))
-        }
+      const { ids } = req.body;
+      if (!ids)
+        return res.customSend(noMatch("No array of ids were submitted."));
+      const arrOfUsers = await UsersDAO.getUsersByIds(ids);
+      if (arrOfUsers && arrOfUsers.length) {
+        arrOfUsers.forEach((user) => {
+          delete user.password;
+        });
+        return res.ok(arrOfUsers);
+      } else {
+        return res.customSend(noMatch("There are no users with these ids."));
+      }
     } catch (error) {
-        res.serverErr(error)
+      res.serverErr(error);
     }
   }
 
   static async getUserChatHistory(req, res) {
     try {
-        const history = {};
-        const userId = req.user.id;
-        const privateMessages = await PrivateMessagesDAO.getUserPrivateMessages(userId);
-        history.private = aggregatePrivateMessages(privateMessages, userId);
-        
-        const groupMessages = await GroupMessagesDAO.getUserGroupsMessages(userId);
-        history.group = aggregateGroupMessages(groupMessages, userId);
-        history.userGroups = await GroupsDAO.getUserGroups(userId);
-        history.friends = await FriendshipsDAO.getFriendsNames(userId);
-        res.ok(history);
-      } catch (error) {
-        console.log(error);
-        res.serverErr(error)
-      }
+      const history = {};
+      const userId = req.user.id;
+      const privateMessages = await PrivateMessagesDAO.getUserPrivateMessages(
+        userId
+      );
+      history.private = aggregatePrivateMessages(privateMessages, userId);
+
+      const groupMessages = await GroupMessagesDAO.getUserGroupsMessages(
+        userId
+      );
+      history.group = aggregateGroupMessages(groupMessages, userId);
+      history.userGroups = await GroupsDAO.getUserGroups(userId);
+      history.friends = await FriendshipsDAO.getFriendsNames(userId);
+      res.ok(history);
+    } catch (error) {
+      console.log(error);
+      res.serverErr(error);
+    }
   }
 }
-
-
 
 module.exports = UsersController;
