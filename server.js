@@ -8,7 +8,7 @@ const { validResponse, createdResponse, serverError } = require('./lib/responseH
 const httpAuth = require('./lib/middlewares/http/auth.js');
 const socketsAuth = require('./lib/middlewares/sockets/auth.js');
 const { PORT } = require('./lib/settings.js');
-const { handleChatMessage } = require('./sockets/events.js');
+const { handleChatMessage, handleChangeFriendRequestStatus } = require('./sockets/events.js');
 const { addConnection, removeConnection } = require('./sockets/connections.js');
 const GroupsDAO = require('./lib/db/dao/GroupsDAO.js');
 
@@ -48,6 +48,8 @@ io.on('connection', async (socket) => {
   if (groupRooms.length) socket.join(groupRooms);
 
   handleChatMessage(socket);
+
+  handleChangeFriendRequestStatus(io, socket);
 
   socket.on('disconnect', () => {
     removeConnection(userId, connectionId);

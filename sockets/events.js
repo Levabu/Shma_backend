@@ -54,6 +54,40 @@ const handleChatMessage = (socket) => {
   });
 }
 
+const handleChangeFriendRequestStatus = (io, socket) => {
+  socket.on('change_friend_request_status', async (data) => {
+    const { userId } = socket;
+    const { id, status } = data;
+    try {
+      const friendship = await FriendshipsDAO.getFriendship(id, userId);
+      if (!friendship) {
+        throw new Error('Friendship not found');
+      }
+      if (friendship.status !== 'pending') {
+        throw new Error('Friendship is not pending');
+      }
+      if (!['accepted', 'declined', 'canceled'].includes(status)) {
+        throw new Error('Invalid status');
+      }
+
+      if (status === 'accepted') {
+        await FriendshipsDAO.confirmFriendship(id, userId);
+      } else {
+        await FriendshipsDAO.deleteFriendship(id, userId);
+      }
+      
+      io.to(userId).to(id).emit('change_friend_request_status', {
+        from: friendship.fromId,
+        to: friendship.fromId === friendship.userId1 ? friendship.userId2 : friendship.userId1,
+        status
+      });
+    } catch (error) {
+      socket.emit('error', error.message);
+    }
+  });
+}
+
 module.exports = {
-  handleChatMessage
+  handleChatMessage,
+  handleChangeFriendRequestStatus
 }
