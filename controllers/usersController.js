@@ -141,7 +141,7 @@ class UsersController {
       );
       history.group = aggregateGroupMessages(groupMessages, userId);
       history.userGroups = await GroupsDAO.getUserGroups(userId);
-      history.friends = await FriendshipsDAO.getFriendsNames(userId);
+      history.friends = await FriendshipsDAO.getFriendsWithStatus(userId);
       res.ok(history);
     } catch (error) {
       console.log(error);
