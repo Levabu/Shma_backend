@@ -1,6 +1,7 @@
 
 const FriendshipsDAO = require("../lib/db/dao/FriendshipsDAO");
 const { PrivateMessagesDAO, GroupMessagesDAO } = require("../lib/db/dao/MessagesDAO");
+const UsersDAO = require("../lib/db/dao/usersDAO");
 const GroupMessage = require("../lib/db/models/GroupMessage");
 const PrivateMessage = require("../lib/db/models/PrivateMessage");
 
@@ -87,7 +88,45 @@ const handleChangeFriendRequestStatus = (io, socket) => {
   });
 }
 
+const handleSendFriendRequest = (io, socket) => {
+  socket.on('send_friend_request', async (data, callback) => {
+    const { userId } = socket;
+    const { to } = data;
+
+    try {
+      const friendship = await FriendshipsDAO.getFriendship(userId, to);
+      if (friendship) {
+        return callback({status: 400, message: 'Friendship already exists'});
+      }
+
+      const isCreatedSuccessfully = await FriendshipsDAO.makeFriendRequest(userId, to);
+      if (!isCreatedSuccessfully) {
+        return callback({status: 400, message: 'Could not create friendship'});
+      }
+
+      const users = await UsersDAO.getUsersByIds([to, userId]);
+      if (!users || users.length !== 2) {
+        return callback({status: 400, message: 'User not found'});
+      }
+      const fromUser = users.find(user => user.id == userId);
+      const toUser = users.find(user => user.id == to);
+      delete fromUser.password;
+      delete toUser.password;
+
+      callback({status: 201});
+      io.to(to).to(userId).emit('send_friend_request', {
+        toUser,
+        fromUser,
+        fromId: userId,
+      });
+    } catch (error) {
+      callback({status: 400, message: error.message});
+    }
+  });
+}
+
 module.exports = {
   handleChatMessage,
-  handleChangeFriendRequestStatus
+  handleChangeFriendRequestStatus,
+  handleSendFriendRequest
 }

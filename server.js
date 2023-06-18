@@ -8,7 +8,7 @@ const { validResponse, createdResponse, serverError } = require('./lib/responseH
 const httpAuth = require('./lib/middlewares/http/auth.js');
 const socketsAuth = require('./lib/middlewares/sockets/auth.js');
 const { PORT } = require('./lib/settings.js');
-const { handleChatMessage, handleChangeFriendRequestStatus } = require('./sockets/events.js');
+const { handleChatMessage, handleChangeFriendRequestStatus, handleSendFriendRequest } = require('./sockets/events.js');
 const { addConnection, removeConnection } = require('./sockets/connections.js');
 const GroupsDAO = require('./lib/db/dao/GroupsDAO.js');
 
@@ -40,20 +40,24 @@ io.use(socketsAuth);
 
 io.on('connection', async (socket) => {
   const { userId, connectionId } = socket;
-  addConnection(userId, connectionId);
-  socket.join(userId);
+  if (userId && connectionId) {
+    addConnection(userId, connectionId);
+    socket.join(userId);
 
-  const userGroups = await GroupsDAO.getUserGroups(userId);
-  const groupRooms = userGroups.map(group => `group_${group.id}`);
-  if (groupRooms.length) socket.join(groupRooms);
+    const userGroups = await GroupsDAO.getUserGroups(userId);
+    const groupRooms = userGroups.map(group => `group_${group.id}`);
+    if (groupRooms.length) socket.join(groupRooms);
 
-  handleChatMessage(socket);
+    handleChatMessage(socket);
 
-  handleChangeFriendRequestStatus(io, socket);
+    handleChangeFriendRequestStatus(io, socket);
 
-  socket.on('disconnect', () => {
-    removeConnection(userId, connectionId);
-  });
+    handleSendFriendRequest(io, socket);
+
+    socket.on('disconnect', () => {
+      removeConnection(userId, connectionId);
+    });
+  }
 });
 
 server.listen(PORT, () => {
