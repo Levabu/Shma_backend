@@ -110,15 +110,26 @@ class UsersController {
 
   static async getUsersByIds(req, res) {
     try {
-      const { ids } = req.body;
+      const { ids, userId } = req.body;
       if (!ids)
         return res.customSend(noMatch("No array of ids were submitted."));
       const arrOfUsers = await UsersDAO.getUsersByIds(ids);
       if (arrOfUsers && arrOfUsers.length) {
-        arrOfUsers.forEach((user) => {
+        let i = 0;
+        await arrOfUsers.forEach(async (user) => {
+          const { id } = user;
+          const friendship = await FriendshipsDAO.checkFriendship(userId, id);
+          if (friendship) {
+            user.relationship = friendship.status;
+          } else {
+            user.relationship = false;
+          }
           delete user.password;
+          i++;
+          if (i === arrOfUsers.length - 1) {
+            return res.ok(arrOfUsers);
+          }
         });
-        return res.ok(arrOfUsers);
       } else {
         return res.customSend(noMatch("There are no users with these ids."));
       }
