@@ -48,6 +48,7 @@ const handleChatMessage = (socket) => {
         from: userId,
         to: message.to,
         type: message.type,
+        createdAt: new Date(),
       });
     } catch (error) {
       socket.emit('error', error.message);
