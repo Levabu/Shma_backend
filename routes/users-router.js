@@ -8,6 +8,7 @@ router.post('/login', validateDto(loginSchema), UsersController.login);
 router.get('/user-details', UsersController.userDetails);
 router.get('/user-by-id', UsersController.getUserById);
 router.post('/users-by-ids',UsersController.getUsersByIds);
-router.get('/chat-history', UsersController.getUserChatHistory)
+router.get('/chat-history', UsersController.getUserChatHistory);
+router.post('/search', UsersController.getFilteredUsers);
 
 module.exports = router;

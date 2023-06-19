@@ -1,6 +1,6 @@
 const UsersDAO = require("../lib/db/dao/usersDAO");
 const bcrypt = require("bcrypt");
-const { noMatch, invalidUserName } = require("../lib/responseHandlers");
+const { noMatch, invalidUserName, missingParams, serverError } = require("../lib/responseHandlers");
 const { jwt } = require("../lib/jwt");
 const {
   PrivateMessagesDAO,
@@ -40,7 +40,6 @@ class UsersController {
       const user = await UsersDAO.getUserByUsername(userName);
       delete user.password;
 
-      // bug with line below - throws error (which in turn throws server error)
       const token = jwt.sign({ id: user.id });
       user.token = token;
 
@@ -61,7 +60,6 @@ class UsersController {
           if (isPasswordValid) {
             delete user.password;
 
-            // bug with line below - throws error (which in turn throws server error)
             const token = jwt.sign({ id: user.id });
             user.token = token;
 
@@ -132,6 +130,37 @@ class UsersController {
         });
       } else {
         return res.customSend(noMatch("There are no users with these ids."));
+      }
+    } catch (error) {
+      res.serverErr(error);
+    }
+  }
+
+  static async getFilteredUsers(req, res) {
+    try {
+      const { searchFor, userId } = req.body;
+      let filteredUsers = [];
+      if (searchFor && searchFor.length) {
+        filteredUsers = await UsersDAO.getUsersBySearch(searchFor);
+      } else {
+        return res.customSend(missingParams("No text with which to filter"))
+      }
+      if (filteredUsers && filteredUsers.length) {
+        let i = 0;
+        await filteredUsers.forEach(async (user) => {
+          const { id } = user;
+          const friendship = await FriendshipsDAO.checkFriendship(userId, id);
+          if (friendship) {
+            user.relationship = friendship.status;
+          } else {
+            user.relationship = false;
+          }
+          delete user.password;
+          i++;
+          if (i === filteredUsers.length) {
+            return res.ok(filteredUsers);
+          }
+        });
       }
     } catch (error) {
       res.serverErr(error);
