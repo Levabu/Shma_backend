@@ -47,6 +47,7 @@ const handleChatMessage = (socket) => {
         message: message.message,
         from: userId,
         to: message.to,
+        userName: message.userName,
         type: message.type,
         createdAt: new Date(),
       });
