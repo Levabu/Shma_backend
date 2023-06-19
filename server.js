@@ -44,9 +44,13 @@ io.on('connection', async (socket) => {
     addConnection(userId, connectionId);
     socket.join(userId);
 
-    const userGroups = await GroupsDAO.getUserGroups(userId);
-    const groupRooms = userGroups.map(group => `group_${group.id}`);
-    if (groupRooms.length) socket.join(groupRooms);
+    try {
+      const userGroups = await GroupsDAO.getUserGroups(userId);
+      const groupRooms = userGroups.map(group => `group_${group.id}`);
+      if (groupRooms.length) socket.join(groupRooms);
+    } catch (error) {
+      console.log(error.message);
+    }
 
     handleChatMessage(socket);
 
