@@ -4,13 +4,13 @@ const express = require('express');
 const cors = require('cors');
 const { Server } = require('socket.io');
 
-const { validResponse, createdResponse, serverError } = require('./lib/responseHandlers.js');
-const httpAuth = require('./lib/middlewares/http/auth.js');
-const socketsAuth = require('./lib/middlewares/sockets/auth.js');
-const { PORT } = require('./lib/settings.js');
-const { handleChatMessage, handleChangeFriendRequestStatus, handleSendFriendRequest } = require('./sockets/events.js');
-const { addConnection, removeConnection } = require('./sockets/connections.js');
-const GroupsDAO = require('./lib/db/dao/GroupsDAO.js');
+const { validResponse, createdResponse, serverError } = require('../lib/responseHandlers.js');
+const httpAuth = require('../lib/middlewares/http/auth.js');
+const socketsAuth = require('../lib/middlewares/sockets/auth.js');
+const { PORT } = require('../lib/settings.js');
+const { handleChatMessage, handleChangeFriendRequestStatus, handleSendFriendRequest } = require('../sockets/events.js');
+const { addConnection, removeConnection } = require('../sockets/connections.js');
+const GroupsDAO = require('../lib/db/dao/GroupsDAO.js');
 
 const app = express();
 const server = http.createServer(app);
@@ -34,7 +34,7 @@ app.use((req, res, next) => {
 
 app.use(httpAuth);
 
-app.use('/api/v1', require('./routes/api-router.js'));
+app.use('/api/v1', require('../routes/api-router.js'));
 
 io.use(socketsAuth);
 
